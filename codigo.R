@@ -13,3 +13,118 @@ library(rio)
 # DATOS A UTILIZAR -----
 
 datos <- Hitters
+
+str(datos)
+summary(datos)
+
+datos <- na.omit(datos)
+datos$Salary <- log(datos$Salary)
+
+openxlsx::write.xlsx(datos, "hitters.xlsx")
+
+library(leaps)
+
+mod_back <- regsubsets(Salary ~., datos, nvmax = 19,
+                           method = "backward")
+
+mod_forw <- regsubsets(Salary ~., datos, nvmax = 19,
+                       method = "forward")
+
+muerte <- summary(mod_back)
+destruccion <- summary(mod_forw)
+# Asterisco indica que la variable es incluida en el modelo correspondiente
+# Modelo de 1 predictor: CRuns
+# Modelo de 2 predictores: 
+
+muerte$adjr2
+muerte$cp
+muerte$bic
+muerte$rss
+
+destruccion$adjr2
+destruccion$cp
+destruccion$bic
+destruccion$rss
+
+summary(datos$Salary)
+
+coef(mod_forw, 19)
+coef(mod_back, 19)
+
+
+# Regresión Lasso ---------------------------------------------------------
+
+library(glmnet)
+
+x <- model.matrix(Salary ~., datos)[,-1]
+y <- datos$Salary
+
+grilla <- 10^seq(10, -2, length = 100)
+
+set.seed(3312)
+id <- sample(1:nrow(datos), nrow(datos)/2)
+
+mod_lasso <- glmnet(x, y, alpha = 1, lambda = grilla)
+
+cv_lasso <- cv.glmnet(x, y, alpha = 1)
+lambda <- cv_lasso$lambda.min #0.003980233
+
+lasso_2.0 <- predict(mod_lasso, type = "coefficients", s = lambda)
+
+round(lasso_2.0, 4)
+
+# Ridge -------------------------------------------------------------------
+
+mod_ridge <- glmnet(x, y, alpha = 0, lambda = grilla)
+
+cv_ridge <- cv.glmnet(x, y, alpha = 0)
+lambda <- cv_ridge$lambda.min #0.0551217
+
+ridge_2.0 <- predict(mod_ridge, type = "coefficients", s = lambda)
+
+round(ridge_2.0, 4)
+
+# Ridge le da importancia a todos los culiaos, mientras que Lasso manda a la mierda a casi todos los ctm
+
+
+# Elasticnet (?) ----------------------------------------------------------
+
+library(caret)
+
+cv_5 <-  trainControl(method = "cv", number = 5)
+
+hit_elnet <-  train(
+  Salary ~ ., data = datos,
+  method = "glmnet",
+  trControl = cv_5
+)
+
+hit_elnet$bestTune
+
+mod_elnet <- glmnet(x, y, 
+                    alpha = hit_elnet$bestTune[1],
+                    lambda = as.numeric(hit_elnet$bestTune[2]))
+
+cv_elnet <- cv.glmnet(x, y, alpha = hit_elnet$bestTune[1])
+lambda <- cv_elnet$lambda.min #0.1215506
+
+elnet_2.0 <- predict(mod_elnet, type = "coefficients", s = lambda)
+
+round(elnet_2.0, 4)
+
+
+# Lasso adaptativo --------------------------------------------------------
+
+peso <- 1/abs(matrix(coef(
+  cv_ridge, s=cv_ridge$lambda.min)[, 1][2:(ncol(x)+1)] ))^1 #Gamma=1
+
+mod_lassopro <- glmnet(x, y, alpha = 1, penalty.factor = peso)
+
+cv_lassopro <- cv.glmnet(x, y, alpha = 1, penalty.factor = peso)
+
+lambda <- cv_lassopro$lambda.min #0.1215506
+
+lassopro_2.0 <- predict(mod_lassopro, type = "coefficients", s = lambda)
+
+round(lassopro_2.0, 4)
+
