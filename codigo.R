@@ -62,7 +62,6 @@ y <- datos$Salary
 grilla <- 10^seq(10, -2, length = 100)
 
 set.seed(3312)
-id <- sample(1:nrow(datos), nrow(datos)/2)
 
 mod_lasso <- glmnet(x, y, alpha = 1, lambda = grilla)
 
@@ -128,3 +127,24 @@ lassopro_2.0 <- predict(mod_lassopro, type = "coefficients", s = lambda)
 
 round(lassopro_2.0, 4)
 
+
+# Ajuste CV Lasso ---------------------------------------------------------
+
+set.seed(3312)
+
+train <- sample(1:nrow(datos), 0.6*nrow(datos))
+val <- sample(c(1:nrow(datos))[-train], 0.2*nrow(datos))
+test <- c(1:nrow(datos))[-c(train, val)]
+
+grilla <- 10^seq(10, -2, length = 100)
+
+# Orden de esta cosa: entrenar el modelo con el set de entrenamiento, calibrar la weá con el de validación (val) y probar qué chucha con el set de testeo (test)
+
+# 10 veces la validación cruzada
+
+cv_lasso <- cv.glmnet(x[train,], y[train], alpha = 1, lambda = grilla, 
+                      nfolds = 10)
+
+lambda <- cv_lasso$lambda.min
+
+val_lasso <- cv.glmnet(x[train,], y[train], alpha = 1, lambda = lambda)

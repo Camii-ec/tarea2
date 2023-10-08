@@ -16,110 +16,107 @@ format:
 
 ## Pregunta 2
 
-```{python}
-#| warning: false
+```{r}
 #| message: false
-#| results: hide
+#| warning: false
 
-## Librerías Python
+library(ISLR)
+library(dplyr)
+library(rio)
+library(leaps)
+library(glmnet)
+library(caret)
+```
 
-# Tratamiento
-import pandas as pd
-import numpy as np
+```{r}
+datos <- Hitters
 
-# Gráfico
-import matplotlib.pyplot as plt
-from matplotlib import style
-import seaborn as sns
+str(datos)
+summary(datos)
 
-# Preprocesamiento
-from scipy.stats import pearsonr
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge 
-from sklearn.linear_model import Lasso
-from sklearn.linear_model import ElasticNet
-from sklearn.linear_model import RidgeCV 
-from sklearn.linear_model import LassoCV
-from sklearn.linear_model import ElasticNetCV
-
-# Configuración matplotlib
-plt.rcParams['image.cmap'] = "bwr"
-plt.rcParams['savefig.bbox'] = "tight"
-style.use('ggplot') or plt.style.use('ggplot')
-
-# Configuración warnings
-import warnings
-warnings.filterwarnings('ignore')
+datos <- na.omit(datos)
+datos$Salary <- log(datos$Salary)
 ```
 
 
-```{python}
-datos = pd.read_excel('hitters.xlsx')
-datos.info()
+### a)
+
+Regresión Lasso
+
+```{r}
+x <- model.matrix(Salary ~., datos)[,-1]
+y <- datos$Salary
+
+grilla <- 10^seq(10, -2, length = 100)
+
+set.seed(3312)
+
+mod_lasso <- glmnet(x, y, alpha = 1, lambda = grilla)
+
+cv_lasso <- cv.glmnet(x, y, alpha = 1)
+lambda <- cv_lasso$lambda.min #0.003980233
+
+lasso_2.0 <- predict(mod_lasso, type = "coefficients", s = lambda)
+
+round(lasso_2.0, 4)
 ```
 
-```{python}
-# Correlación entre columnas numéricas
-# ==============================================================================
+Regresión Ridge
 
-#Esto es para darle un formato bonito a la matriz de correlación
-def tidy_corr_matrix(corr_mat):
-    '''
-    Función para convertir una matriz de correlación de pandas en formato tidy
-    '''
-    corr_mat = corr_mat.stack().reset_index() #El stack transforma las matrices para que sean más visuales, mientras que el reset_index resetea el índice no más, tal cual
-    corr_mat.columns = ['variable_1','variable_2','r']
-    corr_mat = corr_mat.loc[corr_mat['variable_1'] != corr_mat['variable_2'], :] #Para que elimine todas las correlaciones de las diagonales, que son todas 1
-    corr_mat['abs_r'] = np.abs(corr_mat['r'])
-    corr_mat = corr_mat.sort_values('abs_r', ascending=False)
-    
-    return(corr_mat)
+```{r}
+mod_ridge <- glmnet(x, y, alpha = 0, lambda = grilla)
 
-corr_matrix = datos.select_dtypes(include=['float64', 'int'])\
-              .corr(method='pearson') #Para que seleccione todos los números. El \ es un equivalente al pipe, para que la weá corra en más de una línea
+cv_ridge <- cv.glmnet(x, y, alpha = 0)
+lambda <- cv_ridge$lambda.min #0.0551217
 
-tidy_corr_matrix(corr_matrix).head(10)
+ridge_2.0 <- predict(mod_ridge, type = "coefficients", s = lambda)
+
+round(ridge_2.0, 4)
 ```
 
-```{python}
-# Heatmap matriz de correlaciones
-# ==============================================================================
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
+Elastic-Net
 
-sns.heatmap(
-    corr_matrix,
-    square    = True,
-    ax        = ax
+```{r}
+library(caret)
+
+cv_5 <-  trainControl(method = "cv", number = 5)
+
+hit_elnet <-  train(
+  Salary ~ ., data = datos,
+  method = "glmnet",
+  trControl = cv_5
 )
 
-ax.tick_params(labelsize = 3)
+hit_elnet$bestTune
+
+mod_elnet <- glmnet(x, y, 
+                    alpha = hit_elnet$bestTune[1],
+                    lambda = as.numeric(hit_elnet$bestTune[2]))
+
+cv_elnet <- cv.glmnet(x, y, alpha = hit_elnet$bestTune[1])
+lambda <- cv_elnet$lambda.min #0.1215506
+
+elnet_2.0 <- predict(mod_elnet, type = "coefficients", s = lambda)
+
+round(elnet_2.0, 4)
 ```
 
-### Esto pa la b
+Lasso Adaptativo
 
-```{python}
-# División de los datos en train y test
-# ==============================================================================
-X = datos.drop(columns='Salary')
-y = datos['Salary']
+```{r}
+peso <- 1/abs(matrix(coef(
+  cv_ridge, s=cv_ridge$lambda.min)[, 1][2:(ncol(x)+1)] ))^1 #Gamma=1
 
-X_train, X_test, y_train, y_test = train_test_split(
-                                        X,
-                                        y.values.reshape(-1,1),
-                                        train_size   = 0.7,
-                                        random_state = 3312,
-                                        shuffle      = True
-                                    )
+mod_lassopro <- glmnet(x, y, alpha = 1, penalty.factor = peso)
+
+cv_lassopro <- cv.glmnet(x, y, alpha = 1, penalty.factor = peso)
+
+lambda <- cv_lassopro$lambda.min #0.1215506
+
+lassopro_2.0 <- predict(mod_lassopro, type = "coefficients", s = lambda)
+
+round(lassopro_2.0, 4)
 ```
 
-Mínimos cuadrados ordinarios 
-
-```{python}
-# Creación y entrenamiento del modelo
-# ==============================================================================
-modelo = LinearRegression()
-modelo.fit(X = X_train, y = y_train)
-```
+### b)
 
