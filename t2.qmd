@@ -14,6 +14,76 @@ format:
 
 ## Pregunta 1
 
+Por definición el sesgo es la diferencia entre el valor esperado del parámetro y el mismo, es decir:
+
+$$ sesgo(\beta) = E(\beta) - \beta $$
+Por lo que, para determinar el sesgo del parámetro es necesario encontrar la esperanza del mismo. En este caso, nos interesa especificamente los estimadores de mínimos cuadrados de la regresión Ridge y LASSO. Por lo que para determinar la forma del estimador de mínimos cuadrados de la regresión Ridge, primero veamos la forma de la función que se debe minimizar:
+
+$$f(\beta_*) = (Y - X\beta)^T(Y-X\beta) + \lambda (\beta_*^T\beta_*),$$
+de la expresión anterior es claro notar, que si $\lambda = 0$, se obtiene una expresión de la regresiñon lineal, por lo que no tendría mucho sentido, por otro lado, sin $\lambda \rightarrow \infty$, el impacto de la penalización aumenta y las estimaciones del coeficiente de regresión Ridge se acercarán a cero, por lo que al final la forma de determinar el $\lambda$, es crucial para el análisis de este modelo.
+
+Ahora bien, el ínteres del procedimiento radica en determinar la forma del estimador de mínimos cuadrados de la *Regresión Ridge*, por lo que derivando la expresión anterior con respecto a $\beta_*$, se tiene:
+
+\begin{align*}
+f(\beta_* ) &=& y^Ty - y^TX\beta_* - \beta_* ^T X^Ty + \beta_* ^T X^T X \beta_* + \lambda (\beta_*^T\beta_*) \\
+f'(\beta_* ) &=& -2X^Ty + 2X^TX\beta_* + 2\lambda\beta_*
+\end{align*}
+
+Igualando a 0:
+
+$$\beta_* =  (X^TX + \lambda I_p)^{-1} X^Ty $$
+
+Con esta expresión es posible calcular la esperanza de $\beta_*$, además es importante recordar que $X^TX = I_p$:
+
+\begin{align*}
+E(\beta_*) &=& E((X^TX + \lambda I_p)^{-1} X^Ty) \\
+&=& E((X^TX + \lambda I_p)^{-1} X^T (X\beta_* + \epsilon) ) \\
+&=& E((X^TX + \lambda I_p)^{-1} X^TX\beta_* ) + E((X^TX + \lambda I_p)^{-1} X^T\epsilon)) \\
+&=& (I_p + \lambda I_p)^{-1} \beta_* + (I_p + \lambda I_p)^{-1}X^TE(\epsilon) \\
+&=& (1+\lambda)^{-1}\beta_*\\
+&=& \frac{\beta_*}{1 + \lambda}
+\end{align*}
+
+Con el valor de la $E(\beta_*)$ es posible calcular el sesgo:
+
+$$ sesgo(\beta_*) =  \frac{\beta_*}{1 + \lambda} - \beta_* = \frac{-\beta_*\lambda}{1+\lambda}$$
+
+De acá es claro notar que el sesgo va a depender del valor de lambda, además de que mientras más cercano a 0 el valor del lambda menos sesgo tendrá el parámetro.
+
+Por otro lado, si calculamos la varianza de $\beta_*$, al ser un vector es lo mismo que calcular la $Cov(\beta_*)$:
+
+\begin{align*}
+Cov(\beta_*) &=& Cov[(X^TX + \lambda I_p)^{-1}X^Ty] \\
+&=& Cov[(X^TX + \lambda I_p)^{-1}X^T X \hat\beta] \\
+&=& (X^TX + \lambda I_p)^{-1}(X^T X) Cov(\hat\beta)[  (X^TX + \lambda I_p)^{-1}(X^T X)]^T \\
+&=& (X^TX + \lambda I_p)^{-1}(X^T X) (\sigma^2(X^TX)^{-1})[  (X^TX + \lambda I_p)^{-1}(X^T X)]^T \\
+&=& \sigma^2 (X^TX + \lambda I_p)^{-1}(X^T X)(X^TX + \lambda I_p)^{-1}\\
+&=& \sigma^2 (I_p + \lambda I_p)^{-1}(I_p + \lambda I_p)^{-1}\\
+&=& \frac{\sigma^2}{(1+\lambda)^2}I_p
+\end{align*}
+
+De este resultado, es posible notar que si $\lambda \rightarrow 0$ la varianza se hará constante, objetivo principal en este tipo de problemas de maximización.
+
+Para la *Regresión LASSO*, los procedimientos son similares, al igual que en el caso anterior, lo primero que debemos ver es la forma de la función que se debe minimizar:
+
+$$f(\beta_*) = (Y - X\beta)^T(Y-X\beta) + \lambda||\beta_*||_1,$$
+
+Debido a la norma 1 de la regresión Lasso, se dividirá el problema en dos situaciones, primero se verá cuando $\hat\beta_1 > 0$, lo que implica que $\hat\beta_{*i} \geq 0$, por lo que ahora si derivamos con respectos a $\hat\beta_{*i}$, se tiene:
+
+$$ f'(\beta_{*i} ) = -2\hat\beta_{i} + 2\beta_{*i} + \lambda $$
+Luego igualando a 0 se tiene:
+
+\begin{align*}
+-2\hat\beta_{i} + 2\beta_{*i} + \lambda &=& 0 \\
+\beta_{*i} &=& \hat\beta_{i} - \frac{\lambda}{2} \\
+\beta_{*i} &=& sgn(\hat\beta_i)(|\hat\beta_{i}| - \frac{\lambda}{2})^+ \\
+\end{align*}
+
+Ahora bien si vemos el caso análogo de $\hat\beta_1 < 0$, lo que implica que $\hat\beta_{*i} \leq 0$ se tiene:
+
+$$ \beta_{*i} = (\hat\beta + \frac{\lambda}{2})^- = -(- \hat\beta  - \frac{\lambda}{2})^+ = sgn(\hat\beta_i)(|\hat\beta_{i}| - \frac{\lambda}{2})^+ $$
+
+
 ## Pregunta 2
 
 ```{r}
