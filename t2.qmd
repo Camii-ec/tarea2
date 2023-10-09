@@ -68,7 +68,7 @@ Para la *Regresión LASSO*, los procedimientos son similares, al igual que en el
 
 $$f(\beta_*) = (Y - X\beta)^T(Y-X\beta) + \lambda||\beta_*||_1,$$
 
-Debido a la norma 1 de la regresión Lasso, se dividirá el problema en dos situaciones, primero se verá cuando $\hat\beta_1 > 0$, lo que implica que $\hat\beta_{*i} \geq 0$, por lo que ahora si derivamos con respectos a $\hat\beta_{*i}$, se tiene:
+Debido a la norma 1 de la regresión Lasso, se dividirá el problema en dos situaciones, primero se verá cuando $\hat\beta_1 > 0$, lo que implica que $\hat\beta_{*i} \geq 0$, por lo que ahora si derivamos con respectos a $\hat\beta_{*i}$ y usando que la matriz $X$ es ortogonal, se tiene:
 
 $$ f'(\beta_{*i} ) = -2\hat\beta_{i} + 2\beta_{*i} + \lambda $$
 Luego igualando a 0 se tiene:
@@ -82,7 +82,9 @@ Luego igualando a 0 se tiene:
 Ahora bien si vemos el caso análogo de $\hat\beta_1 < 0$, lo que implica que $\hat\beta_{*i} \leq 0$ se tiene:
 
 $$ \beta_{*i} = (\hat\beta + \frac{\lambda}{2})^- = -(- \hat\beta  - \frac{\lambda}{2})^+ = sgn(\hat\beta_i)(|\hat\beta_{i}| - \frac{\lambda}{2})^+ $$
+Una vez que tenemos una expresión para el estimador de mínimos cuadrados se debería poder calcular el valor de la esperanza para poder ver el sesgo y el de la varianza. Sin embargo, por la forma de la que se obtiene $\beta_{*i}$, resulta imposible encontrar una expresión para el sesgo y la varianza. A pesar de ello, si se le puede dar una interpretación, ya que la idea es conseguir el mejor equilibrio entre tener un estimador poco sesgado y una varianza constante y pequeña, por lo mismo el objetivo es encontrar el lambda que ayude a que estos dos objetivos se cumplan.
 
+Al comparar los resultados, es claro notar que la regresión ridge facilita mucho la selección, pues es bastante más sencillo encontrar el valor que minimiza el sesgo y la varianza. Sin embargo, no podemos olvidar que la principal razón por la que la regresión LASSO se vuelve más complicada, se debe a que principalmente esta además de ser un método de regularización es también un método de selección por lo que dependerá del caso que de lo que nos interesará hacer cual es la que nos interesará usar.
 
 ## Pregunta 2
 

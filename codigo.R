@@ -158,7 +158,7 @@ calcular_mseval <- function(prediccion){
   return(mse)
 }
 
-mse_lasso <- apply(evaluacion, 2, calcular_mse)
+mse_lasso <- apply(evaluacion, 2, calcular_mseval)
 lambda[which.min(mse_lasso)] #lambda que minimiza el mse en el conjunto de validación
 ## ¿En volá mostrar los coeficientes de este modelo? Problema pa la Camilita del futuro
 
@@ -175,3 +175,4 @@ calcular_msetest <- function(prediccion){
 }
 
 apply(testeo, 2, calcular_msetest)
+

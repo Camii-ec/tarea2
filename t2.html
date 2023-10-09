@@ -3208,7 +3208,7 @@ Cov(\beta_*) &amp;=&amp; Cov[(X^TX + \lambda I_p)^{-1}X^Ty] \\
 <p>De este resultado, es posible notar que si <span class="math inline">\(\lambda \rightarrow 0\)</span> la varianza se hará constante, objetivo principal en este tipo de problemas de maximización.</p>
 <p>Para la <em>Regresión LASSO</em>, los procedimientos son similares, al igual que en el caso anterior, lo primero que debemos ver es la forma de la función que se debe minimizar:</p>
 <p><span class="math display">\[f(\beta_*) = (Y - X\beta)^T(Y-X\beta) + \lambda||\beta_*||_1,\]</span></p>
-<p>Debido a la norma 1 de la regresión Lasso, se dividirá el problema en dos situaciones, primero se verá cuando <span class="math inline">\(\hat\beta_1 &gt; 0\)</span>, lo que implica que <span class="math inline">\(\hat\beta_{*i} \geq 0\)</span>, por lo que ahora si derivamos con respectos a <span class="math inline">\(\hat\beta_{*i}\)</span>, se tiene:</p>
+<p>Debido a la norma 1 de la regresión Lasso, se dividirá el problema en dos situaciones, primero se verá cuando <span class="math inline">\(\hat\beta_1 &gt; 0\)</span>, lo que implica que <span class="math inline">\(\hat\beta_{*i} \geq 0\)</span>, por lo que ahora si derivamos con respectos a <span class="math inline">\(\hat\beta_{*i}\)</span> y usando que la matriz <span class="math inline">\(X\)</span> es ortogonal, se tiene:</p>
 <p><span class="math display">\[ f&#39;(\beta_{*i} ) = -2\hat\beta_{i} + 2\beta_{*i} + \lambda \]</span> Luego igualando a 0 se tiene:</p>
 <p><span class="math display">\[\begin{align*}
 -2\hat\beta_{i} + 2\beta_{*i} + \lambda &amp;=&amp; 0 \\
@@ -3216,7 +3216,8 @@ Cov(\beta_*) &amp;=&amp; Cov[(X^TX + \lambda I_p)^{-1}X^Ty] \\
 \beta_{*i} &amp;=&amp; sgn(\hat\beta_i)(|\hat\beta_{i}| - \frac{\lambda}{2})^+ \\
 \end{align*}\]</span></p>
 <p>Ahora bien si vemos el caso análogo de <span class="math inline">\(\hat\beta_1 &lt; 0\)</span>, lo que implica que <span class="math inline">\(\hat\beta_{*i} \leq 0\)</span> se tiene:</p>
-<p><span class="math display">\[ \beta_{*i} = (\hat\beta + \frac{\lambda}{2})^- = -(- \hat\beta  - \frac{\lambda}{2})^+ = sgn(\hat\beta_i)(|\hat\beta_{i}| - \frac{\lambda}{2})^+ \]</span></p>
+<p><span class="math display">\[ \beta_{*i} = (\hat\beta + \frac{\lambda}{2})^- = -(- \hat\beta  - \frac{\lambda}{2})^+ = sgn(\hat\beta_i)(|\hat\beta_{i}| - \frac{\lambda}{2})^+ \]</span> Una vez que tenemos una expresión para el estimador de mínimos cuadrados se debería poder calcular el valor de la esperanza para poder ver el sesgo y el de la varianza. Sin embargo, por la forma de la que se obtiene <span class="math inline">\(\beta_{*i}\)</span>, resulta imposible encontrar una expresión para el sesgo y la varianza. A pesar de ello, si se le puede dar una interpretación, ya que la idea es conseguir el mejor equilibrio entre tener un estimador poco sesgado y una varianza constante y pequeña, por lo mismo el objetivo es encontrar el lambda que ayude a que estos dos objetivos se cumplan.</p>
+<p>Al comparar los resultados, es claro notar que la regresión ridge facilita mucho la selección, pues es bastante más sencillo encontrar el valor que minimiza el sesgo y la varianza. Sin embargo, no podemos olvidar que la principal razón por la que la regresión LASSO se vuelve más complicada, se debe a que principalmente esta además de ser un método de regularización es también un método de selección por lo que dependerá del caso que de lo que nos interesará hacer cual es la que nos interesará usar.</p>
 </section>
 <section id="pregunta-2" class="level2">
 <h2 class="anchored" data-anchor-id="pregunta-2">Pregunta 2</h2>
