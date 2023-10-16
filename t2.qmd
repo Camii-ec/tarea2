@@ -104,6 +104,7 @@ library(leaps)
 library(glmnet)
 library(caret)
 library(corrplot)
+library(kableExtra)
 ```
 
 ```{r echo=FALSE, results='hide'}
@@ -131,7 +132,9 @@ De la figura anterior vemos que existen 2 grupos de variables relacionadas entre
 
 i) Ajuste y visualize métodos de regularización vistos en clase (LASSO, Elastic-Net) incluyendo LASSO adaptativo
 
-Regresión Lasso
+Realizando un ajuste de los datos, construyendo una grilla para guardar los posibles valores de lambda y fijando el valor de $\alpha = 1$, para ajustar una regresión Lasso, se tiene:
+
+- **Regresión Lasso**
 
 ```{r}
 x <- model.matrix(Salary ~., datos)[,-1]
@@ -147,11 +150,25 @@ cv_lasso <- cv.glmnet(x, y, alpha = 1)
 lambda <- cv_lasso$lambda.min #0.003980233
 
 lasso_2.0 <- predict(mod_lasso, type = "coefficients", s = lambda)
-
-round(lasso_2.0, 4)
 ```
 
-Regresión Ridge
+Con lo anterior, es posible determinar los valores de los predictores de la regresión Lasso, que son:
+
+
+```{r echo = FALSE}
+
+tabla_datos1 <- as.matrix(lasso_2.0)
+
+colnames(tabla_datos1) <- c("Predictores Lasso")
+
+knitr::kable(tabla_datos1, digits = 4, align = "c") %>% 
+  kable_styling( position="center")
+
+```
+
+- **Regresión Ridge:**
+
+Ahora para la Regresión Ridge, el ajuste es bastante similar, pero la principal variación, ocurre en que el $\alpha$ se fija en $0$, resultando:
 
 ```{r}
 mod_ridge <- glmnet(x, y, alpha = 0, lambda = grilla)
@@ -161,10 +178,25 @@ lambda <- cv_ridge$lambda.min #0.0551217
 
 ridge_2.0 <- predict(mod_ridge, type = "coefficients", s = lambda)
 
-round(ridge_2.0, 4)
 ```
 
-Elastic-Net
+Con lo anterior, es posible determinar los valores de los predictores de la regresión Ridge, son:
+
+```{r echo = FALSE}
+
+tabla_datos2 <- as.matrix(ridge_2.0)
+
+colnames(tabla_datos2) <- c("Predictores Ridge")
+
+knitr::kable(tabla_datos2, digits = 4, align = "c") %>% 
+  kable_styling( position="center")
+
+```
+
+
+- **Elastic-Net:**
+
+Aqui explicar q este método elige al mejor de los alpha y despues, realiza el método de regularización muy similar a los otros dos anteriores, que se puede ver su paso a paso de la siguiente forma:
 
 ```{r}
 library(caret)
@@ -188,10 +220,26 @@ lambda <- cv_elnet$lambda.min #0.1215506
 
 elnet_2.0 <- predict(mod_elnet, type = "coefficients", s = lambda)
 
-round(elnet_2.0, 4)
 ```
 
-Lasso Adaptativo
+
+Con lo anterior, es posible determinar los valores de los predictores de la regresión Elastic-Net, son:
+
+```{r echo = FALSE}
+
+tabla_datos3 <- as.matrix(elnet_2.0)
+
+colnames(tabla_datos3) <- c("Predictores Elastic-Net")
+
+knitr::kable(tabla_datos3, digits = 4, align = "c") %>% 
+  kable_styling( position="center")
+
+```
+
+
+- **Lasso Adaptativo**
+
+Al igual que en el caso de la regresión Lasso, el valor de $\alpha$ se fija en $1$. Sin embargo, la mayor diferencia, radica en que se agrega un factor de penalización conocido como $\gamma$, que se agrega como un peso al momento de crear el modelo, por lo que se tiene:
 
 ```{r}
 peso <- 1/abs(matrix(coef(
@@ -205,16 +253,79 @@ lambda <- cv_lassopro$lambda.min #0.1215506
 
 lassopro_2.0 <- predict(mod_lassopro, type = "coefficients", s = lambda)
 
-round(lassopro_2.0, 4)
+```
+
+
+Con lo anterior, es posible determinar los valores de los predictores de la regresión Lasso Adaptativo, que son:
+
+```{r echo = FALSE}
+
+tabla_datos4 <- as.matrix(lassopro_2.0)
+
+colnames(tabla_datos4) <- c("Predictores Lasso Adaptativo")
+
+knitr::kable(tabla_datos4, digits = 4, align = "c") %>% 
+  kable_styling( position="center")
+
 ```
 
 
 ii) ¿Cuáles son los mejores predictores seleccionados por cada método? ¿Son diferentes? Si lo son, ¿por qué?
 
+Los mejores predictores por cada método, deberían ser aquellos mayor explicación le dan a la variable `Salario`, y es claro ver que la mayoría coincide en la categoría `Years`,`Walks`,`LeagueN` y `DivisionW`. En cada método varía levemente el predictor, pero estos son los que más influyen en general, como se muestra en la tabla a continuación:
+
+```{r echo = FALSE}
+
+tabla_datos5 <- cbind(tabla_datos1,tabla_datos2,tabla_datos3,tabla_datos4)
+
+colnames(tabla_datos5) <- c("Lasso","Ridge","Elastic-Net","Lasso Adaptativo")
+
+knitr::kable(tabla_datos5, digits = 4, align = "c") %>% 
+  kable_styling( position="center") %>% 
+  row_spec(c(15,16,8,7), bold=T, background="purple",color = "white", align="c")
+
+```
+
+La variación es mínima y tiene estricta relación a la forma en la como se calculan estos mismos predictores. Sin embargo, todos tienen el mismo comportamiento.
 
 b) ¿Cuál método es mejor para predecir el salario de los jugadores? Para hacer la decisión considere una set de entrenamiento (60%), validación (20%) y test (20%). Si los métodos considerados tienen parámetros que calibrar, entonces se debe ajustar el modelo con el set de datos de entrenamiento, se debe elegir los parámetros a calibrar minimizando el error de predicción en el set de validación y se debe reportar la predicción final con el set de datos de testeo. Se debe repetir este procedimiento 10 veces y reportar los resultados promedio (Nota: puede ver más detalles sobre el set de validación en la página 176 del libro “An Introduction to Statistical Learning” de James, Witten, Hastie y Tibshirani)
 
+
 i) Compare el MSE promedio obtenido en los set de datos de testeo considerando (a) mínimos cuadrados, (b) regresión Ridge, (c) LASSO, (d) Elastic-Net y (e) LASSO adaptativo.
+
+Para comparar los MSE promedio obtenido en cada set de datos, lo primero que se hara será crear la función que calcule dicho valor, tanto paralos datos de validación, como los de testeo:
+
+```{r}
+calcular_mseval <- function(prediccion){
+  mse <- mean((prediccion - y[val[[i]]])^2)
+  return(mse)
+}
+
+calcular_msetest <- function(prediccion){
+  mse <- mean((prediccion - y[test[[i]]])^2)
+  return(mse)
+}
+```
+
+Luego, como dice el enunciado, lo primero que se hará es separar los datos en entrenamiento que se llamara `train`, en los de validación que serán `val` y los de testeo que serán `test`, todo esto de manera aleatoria pero fijando la semilla: 
+
+```{r}
+train <- list()
+val <- list()
+test <- list()
+
+set.seed(3312)
+for(i in 1:10){
+  train[[i]] <- sample(1:nrow(datos), 0.6*nrow(datos))
+  val[[i]] <- sample(c(1:nrow(datos))[-train[[i]]], 0.2*nrow(datos))
+  test[[i]] <- c(1:nrow(datos))[-c(train[[i]], val[[i]])]
+}
+```
+
+Una vez desarmada la base se tiene:
+
+
+
 
 ii)  Visualize los resultados obtenidos para comparar los modelos. Muestre los resultados solamente para el mejor par´ametro de calibración elegido
 
