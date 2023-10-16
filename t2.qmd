@@ -291,7 +291,12 @@ La variación es mínima y tiene estricta relación a la forma en la como se cal
 b) ¿Cuál método es mejor para predecir el salario de los jugadores? Para hacer la decisión considere una set de entrenamiento (60%), validación (20%) y test (20%). Si los métodos considerados tienen parámetros que calibrar, entonces se debe ajustar el modelo con el set de datos de entrenamiento, se debe elegir los parámetros a calibrar minimizando el error de predicción en el set de validación y se debe reportar la predicción final con el set de datos de testeo. Se debe repetir este procedimiento 10 veces y reportar los resultados promedio (Nota: puede ver más detalles sobre el set de validación en la página 176 del libro “An Introduction to Statistical Learning” de James, Witten, Hastie y Tibshirani)
 
 
-i) Compare el MSE promedio obtenido en los set de datos de testeo considerando (a) mínimos cuadrados, (b) regresión Ridge, (c) LASSO, (d) Elastic-Net y (e) LASSO adaptativo.
+- Compare el MSE promedio obtenido en los set de datos de testeo considerando 
+  (a) mínimos cuadrados
+  (b) regresión Ridge
+  (c) LASSO
+  (d) Elastic-Net
+  (e) LASSO adaptativo.
 
 Para comparar los MSE promedio obtenido en cada set de datos, lo primero que se hara será crear la función que calcule dicho valor, tanto paralos datos de validación, como los de testeo:
 
@@ -322,12 +327,157 @@ for(i in 1:10){
 }
 ```
 
-Una vez desarmada la base se tiene:
+Una vez distribuidos los datos de la base se tiene, comenzamos a realizar el algoritmo, para estimar el modelo de Lasso, usando los datos de entrenamientos, ajustando los parámetro según el error en los datos de validación y finalmente se evalua el modelo con los datos de testeo, este procedimiento se repite 10 veces, para poder calcular el MSE promedio para el método Lasso, cuyo procedimiento se observa a continuación:
+
+```{r}
+
+# Método Lasso
+
+mse_lasso <- c()
+
+for(i in 1:10){
+  
+  # Modelo con los datos de entrenamiento
+  cv_lasso <- cv.glmnet(x[train[[i]],], y[train[[i]]], alpha = 1, lambda = grilla, 
+                        nfolds = 10, keep = TRUE)
+  lambda <- cv_lasso$lambda
+  
+  # Ajustamos el parámetro según el error en los datos de validación
+  evaluacion <- predict(cv_lasso, newx = x[val[[i]],], s = lambda)
+  mse <- apply(evaluacion, 2, calcular_mseval)
+  
+  # Evaluamos el modelo en los datos de testeo
+  
+  testeo <- predict(cv_lasso, newx = x[test[[i]],], s = lambda[which.min(mse)])
+  mse_lasso[i] <- apply(testeo, 2, calcular_msetest)
+}
+```
+
+Una vez probado el método de Lasso, es posible probar los otros métodos, tal como se presentan en la pregunta anterior, estos serían, el método de Ridge, Lasso Adaptativo y Elastic-Net. Además, probamos la estimación de los mínimos cuadrados ordinarios:  
+
+```{r}
+# Metodo de Ridge y Lasso Adaptativo
+
+mse_ridge <- c()
+mse_lassoA <- c()
+
+for(i in 1:10){
+  
+  ## Para regresión Ridge
+  # Modelo con los datos de entrenamiento
+  cv_ridge <- cv.glmnet(x[train[[i]],], y[train[[i]]], alpha = 0, lambda = grilla, 
+                        nfolds = 10, keep = TRUE)
+  lambda <- cv_ridge$lambda
+  
+  # Ajustamos el parámetro según el error en los datos de validación
+  evaluacion <- predict(cv_ridge, newx = x[val[[i]],], s = lambda)
+  mse <- apply(evaluacion, 2, calcular_mseval)
+  
+  # Evaluamos el modelo en los datos de testeo
+  
+  testeo <- predict(cv_ridge, newx = x[test[[i]],], s = lambda[which.min(mse)])
+  mse_ridge[i] <- apply(testeo, 2, calcular_msetest)
+  
+  ## Para Lasso Adaptativo
+  peso <- 1/abs(matrix(coef(
+    cv_ridge, s=lambda[which.min(mse)])[,1][2:(ncol(x)+1)]))
+  
+  cv_lassoA <- cv.glmnet(x[train[[i]],], y[train[[i]]], alpha = 1, 
+                         penalty.factor = peso, nfolds = 10, keep = TRUE)
+  
+  lambda <- cv_lassoA$lambda
+  
+  evaluacion <- predict(cv_lassoA, newx = x[val[[i]],], s = lambda)
+  mse <- apply(evaluacion, 2, calcular_mseval)
+  
+  # Evaluamos el modelo en los datos de testeo
+  
+  testeo <- predict(cv_lassoA, newx = x[test[[i]],], s = lambda[which.min(mse)])
+  mse_lassoA[i] <- apply(testeo, 2, calcular_msetest)
+}
+
+# Método de Elastic-Net
+
+mse_elastic <- c()
+cv <-  trainControl(method = "cv", number = 10)
+
+for(i in 1:10){
+  
+  alpha <-  train(Salary ~ ., data = datos[train[[i]],],
+    method = "glmnet",
+    trControl = cv,
+    tuneLength = 10)$bestTune[1]
+  
+  # Modelo con los datos de entrenamiento
+  cv_elastic <- cv.glmnet(x[train[[i]],], y[train[[i]]], alpha = alpha, 
+                          lambda = grilla, nfolds = 10, keep = TRUE)
+  lambda <- cv_elastic$lambda
+  
+  # Ajustamos el parámetro según el error en los datos de validación
+  evaluacion <- predict(cv_elastic, newx = x[val[[i]],], s = lambda)
+  mse <- apply(evaluacion, 2, calcular_mseval)
+  
+  # Evaluamos el modelo en los datos de testeo
+  
+  testeo <- predict(cv_elastic, newx = x[test[[i]],], s = lambda[which.min(mse)])
+  mse_elastic[i] <- apply(testeo, 2, calcular_msetest)
+}
+
+# Método de mínimos cuadrado ordinarios:
+
+mse_mco <- c()
+
+for(i in 1:10){
+  mod_lm <- lm(Salary ~., data = datos[train[[i]],])
+  testeo <- predict(mod_lm, datos[test[[i]],])
+  mse_mco[i] <- mean((testeo - y[test[[i]]])^2)
+}
+
+```
 
 
 
+```{r echo=FALSE}
 
-ii)  Visualize los resultados obtenidos para comparar los modelos. Muestre los resultados solamente para el mejor par´ametro de calibración elegido
+# MSE promedio para el método Lasso:
+prom_mse_lasso <- mean(mse_lasso)
 
-iii) ¿Qué métodos generan el mejor error de predicción? ¿Por qué estos métodos funcionan bien? ¿Los métodos eligen el mismo subconjunto de variables? Explique y amplíe sus respuestas.
+# MSE promedio para el método Ridge:
+prom_mse_ridge <- mean(mse_ridge)
+
+# MSE promedio para el método Lasso Adaptativo:
+prom_mse_lassoA <-mean(mse_lassoA)
+
+# MSE promedio para el método Elastic-Net:
+prom_mse_elastic <- mean(mse_elastic)
+
+# MSE promedio para el método de mínimos cuadrado:
+prom_mse_mco <- mean(mse_mco)
+
+tabla_datos6 <- cbind(prom_mse_lasso,prom_mse_ridge,prom_mse_lassoA,prom_mse_elastic,prom_mse_mco)
+
+
+colnames(tabla_datos6) <- c("Lasso","Ridge","Lasso Adaptivo", "Elastic-Net","Mínimo Cuadrado Ordinarios")
+
+row.names(tabla_datos6) <- c("MSE")
+
+knitr::kable(tabla_datos6, digits = 4, align = "c") %>% 
+  kable_styling( position="center")
+
+```
+
+
+
+- Visualize los resultados obtenidos para comparar los modelos. Muestre los resultados solamente para el mejor parámetro de calibración elegido
+
+No se que visualizar aaaaaaaa
+
+- ¿Qué métodos generan el mejor error de predicción? ¿Por qué estos métodos funcionan bien? ¿Los métodos eligen el mismo subconjunto de variables? Explique y amplíe sus respuestas.
+
+El método que genera el mejor errror de predicción, sería aquel que tenga menor MSE, pues es el que menos se equivoca al momento de predecir. El método de Ridge sería el ideal en este caso, ya que su error es cercano al $42\%$. Es claro, de la tabla anterior que en general el MSE, no se aleja mucho pero es mejor el método Ridge.
+
+La tabla 5, muestra de manera resumida los valores de los predictores y de aquí es bastante claro ver que los métodos eligen casi el mismo subconjunto de variables
+
+
+
 
