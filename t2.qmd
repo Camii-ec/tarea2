@@ -98,7 +98,7 @@ Al comparar los resultados, es claro notar que la regresión ridge facilita much
 #| warning: false
 
 library(ISLR)
-library(dplyr)
+library(tidyverse)
 library(rio)
 library(leaps)
 library(glmnet)
@@ -157,39 +157,22 @@ Con lo anterior, es posible determinar los valores de los predictores de la regr
 
 ```{r echo = FALSE}
 
-tabla_datos1 <- as.matrix(lasso_2.0)
+tabla_datos1 <- as.matrix(lasso_2.0) 
+
+tabla_datos1[-1,] %>% 
+  data.frame() %>% 
+  rename("pred" = contains(".")) %>% 
+  ggplot(aes(x = rownames(tabla_datos1)[-1], y = pred)) +
+  geom_col() +
+  geom_hline(yintercept = 0) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = NULL, y = "Valor", title = "Predictores Lasso")
 
 colnames(tabla_datos1) <- c("Predictores Lasso")
 
-knitr::kable(tabla_datos1, digits = 4, align = "c") %>% 
-  kable_styling( position="center")
-
-```
-
-- **Regresión Ridge:**
-
-Ahora para la Regresión Ridge, el ajuste es bastante similar, pero la principal variación, ocurre en que el $\alpha$ se fija en $0$, resultando:
-
-```{r}
-mod_ridge <- glmnet(x, y, alpha = 0, lambda = grilla)
-
-cv_ridge <- cv.glmnet(x, y, alpha = 0)
-lambda <- cv_ridge$lambda.min #0.0551217
-
-ridge_2.0 <- predict(mod_ridge, type = "coefficients", s = lambda)
-
-```
-
-Con lo anterior, es posible determinar los valores de los predictores de la regresión Ridge, son:
-
-```{r echo = FALSE}
-
-tabla_datos2 <- as.matrix(ridge_2.0)
-
-colnames(tabla_datos2) <- c("Predictores Ridge")
-
-knitr::kable(tabla_datos2, digits = 4, align = "c") %>% 
-  kable_styling( position="center")
+#knitr::kable(tabla_datos1, digits = 4, align = "c") %>% 
+#  kable_styling( position="center")
 
 ```
 
@@ -229,10 +212,20 @@ Con lo anterior, es posible determinar los valores de los predictores de la regr
 
 tabla_datos3 <- as.matrix(elnet_2.0)
 
+tabla_datos3[-1,] %>% 
+  data.frame() %>% 
+  rename("pred" = contains(".")) %>% 
+  ggplot(aes(x = rownames(tabla_datos3)[-1], y = pred)) +
+  geom_col() +
+  geom_hline(yintercept = 0) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = NULL, y = "Valor", title = "Predictores Elastic-Net")
+
 colnames(tabla_datos3) <- c("Predictores Elastic-Net")
 
-knitr::kable(tabla_datos3, digits = 4, align = "c") %>% 
-  kable_styling( position="center")
+#knitr::kable(tabla_datos3, digits = 4, align = "c") %>% 
+#  kable_styling( position="center")
 
 ```
 
@@ -242,6 +235,8 @@ knitr::kable(tabla_datos3, digits = 4, align = "c") %>%
 Al igual que en el caso de la regresión Lasso, el valor de $\alpha$ se fija en $1$. Sin embargo, la mayor diferencia, radica en que se agrega un factor de penalización conocido como $\gamma$, que se agrega como un peso al momento de crear el modelo, por lo que se tiene:
 
 ```{r}
+cv_ridge <- cv.glmnet(x, y, alpha = 0)
+
 peso <- 1/abs(matrix(coef(
   cv_ridge, s=cv_ridge$lambda.min)[, 1][2:(ncol(x)+1)] ))^1 #Gamma=1
 
@@ -262,10 +257,20 @@ Con lo anterior, es posible determinar los valores de los predictores de la regr
 
 tabla_datos4 <- as.matrix(lassopro_2.0)
 
+tabla_datos4[-1,] %>% 
+  data.frame() %>% 
+  rename("pred" = contains(".")) %>% 
+  ggplot(aes(x = rownames(tabla_datos4)[-1], y = pred)) +
+  geom_col() +
+  geom_hline(yintercept = 0) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = NULL, y = "Valor", title = "Predictores Lasso Adaptativo")
+
 colnames(tabla_datos4) <- c("Predictores Lasso Adaptativo")
 
-knitr::kable(tabla_datos4, digits = 4, align = "c") %>% 
-  kable_styling( position="center")
+#knitr::kable(tabla_datos4, digits = 4, align = "c") %>% 
+#  kable_styling( position="center")
 
 ```
 
@@ -276,9 +281,9 @@ Los mejores predictores por cada método, deberían ser aquellos mayor explicaci
 
 ```{r echo = FALSE}
 
-tabla_datos5 <- cbind(tabla_datos1,tabla_datos2,tabla_datos3,tabla_datos4)
+tabla_datos5 <- cbind(tabla_datos1,tabla_datos3,tabla_datos4)
 
-colnames(tabla_datos5) <- c("Lasso","Ridge","Elastic-Net","Lasso Adaptativo")
+colnames(tabla_datos5) <- c("Lasso","Elastic-Net","Lasso Adaptativo")
 
 knitr::kable(tabla_datos5, digits = 4, align = "c") %>% 
   kable_styling( position="center") %>% 
@@ -334,6 +339,7 @@ Una vez distribuidos los datos de la base se tiene, comenzamos a realizar el alg
 # Método Lasso
 
 mse_lasso <- c()
+coef_lasso <- list()
 
 for(i in 1:10){
   
@@ -350,6 +356,10 @@ for(i in 1:10){
   
   testeo <- predict(cv_lasso, newx = x[test[[i]],], s = lambda[which.min(mse)])
   mse_lasso[i] <- apply(testeo, 2, calcular_msetest)
+  
+  coef_lasso[[i]] <- predict(cv_lasso, s = lambda[which.min(mse)], type = "coefficients") %>% 
+    as.matrix() %>%
+    data.frame()
 }
 ```
 
@@ -360,6 +370,9 @@ Una vez probado el método de Lasso, es posible probar los otros métodos, tal c
 
 mse_ridge <- c()
 mse_lassoA <- c()
+
+coef_ridge <- list()
+coef_lassoA <- list()
 
 for(i in 1:10){
   
@@ -378,6 +391,11 @@ for(i in 1:10){
   testeo <- predict(cv_ridge, newx = x[test[[i]],], s = lambda[which.min(mse)])
   mse_ridge[i] <- apply(testeo, 2, calcular_msetest)
   
+  # Guardamos los coeficientes para el mejor lambda 
+  coef_ridge[[i]] <- predict(cv_ridge, s = lambda[which.min(mse)], type = "coefficients") %>% 
+    as.matrix() %>%
+    data.frame()
+  
   ## Para Lasso Adaptativo
   peso <- 1/abs(matrix(coef(
     cv_ridge, s=lambda[which.min(mse)])[,1][2:(ncol(x)+1)]))
@@ -394,12 +412,17 @@ for(i in 1:10){
   
   testeo <- predict(cv_lassoA, newx = x[test[[i]],], s = lambda[which.min(mse)])
   mse_lassoA[i] <- apply(testeo, 2, calcular_msetest)
+  
+  coef_lassoA[[i]] <- predict(cv_lassoA, s = lambda[which.min(mse)], type = "coefficients") %>% 
+    as.matrix() %>%
+    data.frame()
 }
 
 # Método de Elastic-Net
 
 mse_elastic <- c()
 cv <-  trainControl(method = "cv", number = 10)
+coef_elastic <- list()
 
 for(i in 1:10){
   
@@ -421,16 +444,23 @@ for(i in 1:10){
   
   testeo <- predict(cv_elastic, newx = x[test[[i]],], s = lambda[which.min(mse)])
   mse_elastic[i] <- apply(testeo, 2, calcular_msetest)
+  
+  coef_elastic[[i]] <- predict(cv_elastic, s = lambda[which.min(mse)], type = "coefficients") %>% 
+    as.matrix() %>% 
+    data.frame()
 }
 
 # Método de mínimos cuadrado ordinarios:
 
 mse_mco <- c()
+coef_mco <- list()
 
 for(i in 1:10){
   mod_lm <- lm(Salary ~., data = datos[train[[i]],])
   testeo <- predict(mod_lm, datos[test[[i]],])
   mse_mco[i] <- mean((testeo - y[test[[i]]])^2)
+  coef_mco[[i]] <- coef(mod_lm) %>% 
+    data.frame()
 }
 
 ```
@@ -457,7 +487,7 @@ prom_mse_mco <- mean(mse_mco)
 tabla_datos6 <- cbind(prom_mse_lasso,prom_mse_ridge,prom_mse_lassoA,prom_mse_elastic,prom_mse_mco)
 
 
-colnames(tabla_datos6) <- c("Lasso","Ridge","Lasso Adaptivo", "Elastic-Net","Mínimo Cuadrado Ordinarios")
+colnames(tabla_datos6) <- c("Lasso","Ridge","Lasso Adaptivo", "Elastic-Net","MCO")
 
 row.names(tabla_datos6) <- c("MSE")
 
@@ -472,9 +502,41 @@ knitr::kable(tabla_datos6, digits = 4, align = "c") %>%
 
 No se que visualizar aaaaaaaa
 
+```{r}
+#| message: false
+
+coef_lasso <- purrr::list_cbind(coef_lasso)
+coef_ridge <- purrr::list_cbind(coef_ridge)
+coef_lassoA <- purrr::list_cbind(coef_lassoA)
+coef_elastic <- purrr::list_cbind(coef_elastic)
+coef_mco <- purrr::list_cbind(coef_mco)
+
+coef <- data.frame("Lasso" = rowMeans(coef_lasso), 
+                   "Ridge" = rowMeans(coef_ridge), 
+                   "LassoA" = rowMeans(coef_lassoA), 
+                   "ElasticNet" = rowMeans(coef_elastic), 
+                   "MCO" = rowMeans(coef_mco),
+                   "Coef" = rownames(coef_lasso)) 
+
+coef %>% 
+  pivot_longer(Lasso:MCO) %>% 
+  filter(Coef != "(Intercept)") %>% 
+  ggplot(aes(x = Coef, y = value, fill = name)) +
+  geom_col() +
+  geom_hline(yintercept = 0, col = "black") +
+  facet_wrap(~name, scales = "free_y", ncol = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = NULL, y = NULL)
+  
+```
+
+
 - ¿Qué métodos generan el mejor error de predicción? ¿Por qué estos métodos funcionan bien? ¿Los métodos eligen el mismo subconjunto de variables? Explique y amplíe sus respuestas.
 
-El método que genera el mejor errror de predicción, sería aquel que tenga menor MSE, pues es el que menos se equivoca al momento de predecir. El método de Ridge sería el ideal en este caso, ya que su error es cercano al $42\%$. Es claro, de la tabla anterior que en general el MSE, no se aleja mucho pero es mejor el método Ridge.
+El método que genera el mejor error de predicción, sería aquel que tenga menor MSE, pues es el que menos se equivoca al momento de predecir. El método de Ridge sería el ideal en este caso, ya que su error es cercano al 0.42. Es claro, de la tabla anterior que en general el MSE, no se aleja mucho pero es mejor el método Ridge.
 
 La tabla 5, muestra de manera resumida los valores de los predictores y de aquí es bastante claro ver que los métodos eligen casi el mismo subconjunto de variables
 
