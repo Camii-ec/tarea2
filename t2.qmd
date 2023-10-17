@@ -105,6 +105,13 @@ library(glmnet)
 library(caret)
 library(corrplot)
 library(kableExtra)
+
+lesb.1 = "#D62900"
+lesb.2 = "#FF9B55"
+lesb.3 = "#FFFFFF"
+lesb.4 = "#D461A6"
+lesb.5 = "#A50062"
+lesbian = c(lesb.1, lesb.2, lesb.3, lesb.4, lesb.5)
 ```
 
 ```{r echo=FALSE, results='hide'}
@@ -163,7 +170,7 @@ tabla_datos1[-1,] %>%
   data.frame() %>% 
   rename("pred" = contains(".")) %>% 
   ggplot(aes(x = rownames(tabla_datos1)[-1], y = pred)) +
-  geom_col() +
+  geom_col( col = "black",fill = lesb.2) +
   geom_hline(yintercept = 0) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -176,10 +183,11 @@ colnames(tabla_datos1) <- c("Predictores Lasso")
 
 ```
 
+Con el gráfico anterior, podemos visualizar cuales son las variables que mayor influyen al explicar `Salario`, son `DivisionW`,`LeagueN` y `Years`. Algunas, rescatables que algo de influencia tienen son `Walks` y `Hits`.
 
 - **Elastic-Net:**
 
-Aqui explicar q este método elige al mejor de los alpha y despues, realiza el método de regularización muy similar a los otros dos anteriores, que se puede ver su paso a paso de la siguiente forma:
+Aquí explicar que este método elige al mejor de los $\alpha$ y después realiza el método de regularización muy similar a los otros dos anteriores. Se puede ver su paso a paso de la siguiente forma:
 
 ```{r}
 library(caret)
@@ -216,7 +224,7 @@ tabla_datos3[-1,] %>%
   data.frame() %>% 
   rename("pred" = contains(".")) %>% 
   ggplot(aes(x = rownames(tabla_datos3)[-1], y = pred)) +
-  geom_col() +
+  geom_col( col = "black", fill = lesb.1) +
   geom_hline(yintercept = 0) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -230,9 +238,11 @@ colnames(tabla_datos3) <- c("Predictores Elastic-Net")
 ```
 
 
+Con el gráfico anterior, podemos visualizar cuales son las variables que mayor influyen al explicar `Salario`, las que son `DivisionW`,`LeagueN` y `Years`. Algunas variables rescatables que tienen algo de influencia son `Errors` y `Walks`.
+
 - **Lasso Adaptativo**
 
-Al igual que en el caso de la regresión Lasso, el valor de $\alpha$ se fija en $1$. Sin embargo, la mayor diferencia, radica en que se agrega un factor de penalización conocido como $\gamma$, que se agrega como un peso al momento de crear el modelo, por lo que se tiene:
+Al igual que en el caso de la regresión Lasso, el valor de $\alpha$ se fija en $1$. Sin embargo, la mayor diferencia radica en que se agrega un factor de penalización conocido como $\gamma$, que se agrega como un peso al momento de crear el modelo, por lo que se tiene:
 
 ```{r}
 cv_ridge <- cv.glmnet(x, y, alpha = 0)
@@ -261,7 +271,7 @@ tabla_datos4[-1,] %>%
   data.frame() %>% 
   rename("pred" = contains(".")) %>% 
   ggplot(aes(x = rownames(tabla_datos4)[-1], y = pred)) +
-  geom_col() +
+  geom_col(fill = lesb.3, col = "black") +
   geom_hline(yintercept = 0) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -275,9 +285,12 @@ colnames(tabla_datos4) <- c("Predictores Lasso Adaptativo")
 ```
 
 
+Con el gráfico anterior, podemos visualizar cuales son las variables que mayor influyen al explicar `Salario`,las que son `DivisionW`,`LeagueN`, `NewLeagueN` y `Years`. Algunas, rescatables que algo de influencia tienen son `Errors` y `Walks`.
+
+
 ii) ¿Cuáles son los mejores predictores seleccionados por cada método? ¿Son diferentes? Si lo son, ¿por qué?
 
-Los mejores predictores por cada método, deberían ser aquellos mayor explicación le dan a la variable `Salario`, y es claro ver que la mayoría coincide en la categoría `Years`,`Walks`,`LeagueN` y `DivisionW`. En cada método varía levemente el predictor, pero estos son los que más influyen en general, como se muestra en la tabla a continuación:
+Los mejores predictores por cada método, deberían ser aquellos mayor explicación le dan a la variable `Salario`, y es claro ver que la mayoría coincide en la categoría `Hits`,`Years`,`Walks`,`LeagueN` y `DivisionW`. En cada método varía levemente el predictor, pero estos son los que más influyen en general, como se muestra en la tabla a continuación:
 
 ```{r echo = FALSE}
 
@@ -287,11 +300,11 @@ colnames(tabla_datos5) <- c("Lasso","Elastic-Net","Lasso Adaptativo")
 
 knitr::kable(tabla_datos5, digits = 4, align = "c") %>% 
   kable_styling( position="center") %>% 
-  row_spec(c(15,16,8,7), bold=T, background="purple",color = "white", align="c")
+  row_spec(c(15,16,8,7,3), bold=T, background="purple",color = "white", align="c")
 
 ```
 
-La variación es mínima y tiene estricta relación a la forma en la como se calculan estos mismos predictores. Sin embargo, todos tienen el mismo comportamiento.
+La variación es mínima y tiene estricta relación a la forma en la como se calculan estos mismos predictores. Sin embargo, todos tienen el mismo comportamiento. Cabe mencionar que a pesar que hay similaridad entre las categorías, existe algunas variables que en algún método inciden más, como el caso de `NewLeagueN` para el caso de Lasso Adaptativo. 
 
 b) ¿Cuál método es mejor para predecir el salario de los jugadores? Para hacer la decisión considere una set de entrenamiento (60%), validación (20%) y test (20%). Si los métodos considerados tienen parámetros que calibrar, entonces se debe ajustar el modelo con el set de datos de entrenamiento, se debe elegir los parámetros a calibrar minimizando el error de predicción en el set de validación y se debe reportar la predicción final con el set de datos de testeo. Se debe repetir este procedimiento 10 veces y reportar los resultados promedio (Nota: puede ver más detalles sobre el set de validación en la página 176 del libro “An Introduction to Statistical Learning” de James, Witten, Hastie y Tibshirani)
 
@@ -363,7 +376,7 @@ for(i in 1:10){
 }
 ```
 
-Una vez probado el método de Lasso, es posible probar los otros métodos, tal como se presentan en la pregunta anterior, estos serían, el método de Ridge, Lasso Adaptativo y Elastic-Net. Además, probamos la estimación de los mínimos cuadrados ordinarios:  
+Una vez probado el método de Lasso, es posible probar los otros métodos. Estos son el método de Ridge, Lasso Adaptativo y Elastic-Net. Además, añadimos la estimación de los mínimos cuadrados ordinarios:  
 
 ```{r}
 # Metodo de Ridge y Lasso Adaptativo
@@ -465,7 +478,7 @@ for(i in 1:10){
 
 ```
 
-
+Una vez calculadas todas las estimaciones para cada caso, calculamos el MSE promedio para cada método. Los resultados se pueden observar en el siguiente gráfico de barras:
 
 ```{r echo=FALSE}
 
@@ -493,24 +506,27 @@ row.names(tabla_datos6) <- c("MSE")
 
 data.frame(tabla_datos6) %>% 
   pivot_longer(Lasso:MCO) %>% 
-  ggplot(aes(x = name, y = value)) +
-  geom_col() +
+  ggplot(aes(x = name, y = value, fill = name)) +
+  geom_col(col = "black") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = lesbian) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = NULL, y = "MSE", title = "Comparación de Modelos") +
-  geom_label(aes(label = round(value, 4)))
+  geom_label(aes(label = round(value, 4)), vjust = 2)
 
 #knitr::kable(tabla_datos6, digits = 4, align = "c") %>% 
 #  kable_styling( position="center")
 
 ```
 
-
+Como nuestro principal interés recae en minimizar lo más posible el MSE, es decir, que el error de predicción del modelo sea pequeño, se puede notar que, con un MSE de 0.4249, el método de Regresión Ridge es el mejor.
 
 - Visualize los resultados obtenidos para comparar los modelos. Muestre los resultados solamente para el mejor parámetro de calibración elegido
 
+Para este inciso, analizaremos el promedio de la estimación de los predictores obtenidos anteriormente. Esto pues cada uno de ellos ha sido calibrado con el $\lambda$ que minimiza el MSE.En la siguiente figura, se puede apreciar de forma conjunta el valor de los predictores para cada variable, de cada método:
 
-```{r}
+```{r echo=FALSE}
 #| message: false
 
 coef_lasso <- purrr::list_cbind(coef_lasso)
@@ -530,10 +546,10 @@ coef %>%
   pivot_longer(Lasso:MCO) %>% 
   filter(Coef != "(Intercept)") %>% 
   ggplot(aes(x = Coef, y = value, fill = name)) +
-  geom_col() +
+  geom_col( col = "black") +
   geom_hline(yintercept = 0, col = "black") +
   facet_wrap(~name, scales = "free_y", ncol = 2) +
-  scale_fill_brewer(palette = "Dark2") +
+  scale_fill_manual(values = lesbian) +
   theme_bw() +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -541,11 +557,13 @@ coef %>%
   
 ```
 
+Guiándonos de la última pregunta, el mejor método sería el de Ridge, por las justificaciones dichas anteriormente por su valor de MSE.
+
 - ¿Qué métodos generan el mejor error de predicción? ¿Por qué estos métodos funcionan bien? ¿Los métodos eligen el mismo subconjunto de variables? Explique y amplíe sus respuestas.
 
 El método que genera el mejor error de predicción, sería aquel que tenga menor MSE, pues es el que menos se equivoca al momento de predecir. El método de Ridge sería el ideal en este caso, ya que su error es cercano al 0.42. Es claro, de la tabla anterior que en general el MSE, no se aleja mucho pero es mejor el método Ridge.
 
-La tabla 5, muestra de manera resumida los valores de los predictores y de aquí es bastante claro ver que los métodos eligen casi el mismo subconjunto de variables
+Los gráficos anterioriormente presentados, muestran de manera resumida los valores de los predictores y de aquí es bastante claro ver que los métodos eligen casi el mismo subconjunto de variables
 
 
 
