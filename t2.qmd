@@ -491,8 +491,17 @@ colnames(tabla_datos6) <- c("Lasso","Ridge","Lasso Adaptivo", "Elastic-Net","MCO
 
 row.names(tabla_datos6) <- c("MSE")
 
-knitr::kable(tabla_datos6, digits = 4, align = "c") %>% 
-  kable_styling( position="center")
+data.frame(tabla_datos6) %>% 
+  pivot_longer(Lasso:MCO) %>% 
+  ggplot(aes(x = name, y = value)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = NULL, y = "MSE", title = "Comparación de Modelos") +
+  geom_label(aes(label = round(value, 4)))
+
+#knitr::kable(tabla_datos6, digits = 4, align = "c") %>% 
+#  kable_styling( position="center")
 
 ```
 
@@ -500,7 +509,6 @@ knitr::kable(tabla_datos6, digits = 4, align = "c") %>%
 
 - Visualize los resultados obtenidos para comparar los modelos. Muestre los resultados solamente para el mejor parámetro de calibración elegido
 
-No se que visualizar aaaaaaaa
 
 ```{r}
 #| message: false
@@ -532,7 +540,6 @@ coef %>%
   labs(x = NULL, y = NULL)
   
 ```
-
 
 - ¿Qué métodos generan el mejor error de predicción? ¿Por qué estos métodos funcionan bien? ¿Los métodos eligen el mismo subconjunto de variables? Explique y amplíe sus respuestas.
 
