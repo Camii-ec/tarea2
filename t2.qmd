@@ -557,13 +557,12 @@ coef %>%
   
 ```
 
-Guiándonos de la última pregunta, el mejor método sería el de Ridge, por las justificaciones dichas anteriormente por su valor de MSE.
+De manera similar al inciso a), podemos apreciar de buena manera las diferencias de escala de los modelos. Si bien todos los modelos asignan importancia a casi las mismas variables, los coeficientes poseen magnitudes bastante diferentes entre sí, como se puede ver en el caso del Elastic-Net y el Lasso Adaptativo, por ejemplo.
 
 - ¿Qué métodos generan el mejor error de predicción? ¿Por qué estos métodos funcionan bien? ¿Los métodos eligen el mismo subconjunto de variables? Explique y amplíe sus respuestas.
 
-El método que genera el mejor error de predicción, sería aquel que tenga menor MSE, pues es el que menos se equivoca al momento de predecir. El método de Ridge sería el ideal en este caso, ya que su error es cercano al 0.42. Es claro, de la tabla anterior que en general el MSE, no se aleja mucho pero es mejor el método Ridge.
+El mejor error de predicción será aquel que produzca un menor MSE al probarlo con los datos de testeo, ya que esto indicará que es el que menos se equivoca al momento de predecir. El método de Ridge sería el ideal en este escenario, como se pudo observar en los gráficos y resultados anteriores. Sin embargo, la diferencia con los otros modelos no es excesiva, y es posible apreciar que los subconjuntos de predictores seleccionados son muy similares entre sí.
 
-Los gráficos anterioriormente presentados, muestran de manera resumida los valores de los predictores y de aquí es bastante claro ver que los métodos eligen casi el mismo subconjunto de variables
 
 
 
